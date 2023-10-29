@@ -1,4 +1,5 @@
 import numpy as np  
+from math import log, fabs, floor
 
 #img numpy geryscale
 #map numpy[256] int8
@@ -7,6 +8,14 @@ def img_applymap (img, map):
         for j in range(img.shape[1]):
             img[i,j] = map[img[i,j]]
     return img
+
+#normal map
+def map_normal ():
+    map = np.ndarray(256, dtype=np.uint16)
+    for i in range(256):
+        map[i] = i
+    return map
+
 
 #brillo
 def map_brightness (value):
@@ -95,3 +104,73 @@ def map_contrast_stretching (points):
 
 def img_contrast_stretching (img, points):
     return img_applymap(img, map_contrast_stretching (points))
+
+
+
+#Gray - level slicing
+# dos variables de umbral, valor fijo, y tipo lineal o cero
+
+def slicing_type_linear (input, t1, t2, value):
+    if (input >= t1 and input <= t2):
+        return value
+    else:
+        return input
+
+def slicing_type_zero (input, t1, t2, value):
+    if (input >= t1 and input <= t2):
+        return value
+    else:
+        return 0
+
+def slicing_type_glow (input, t1, t2, value):
+    if (input >= t1 and input <= t2):
+        return input + value
+    else:
+        return input
+    
+def slicing_type_glow_zero (input, t1, t2, value):
+    if (input >= t1 and input <= t2):
+        return input + value
+    else:
+        return 0
+
+
+def map_gray_level_slicing (t1, t2, value, type = 'linear'):
+    slicing_func = {
+        'linear': slicing_type_linear,
+        'zero': slicing_type_zero,
+        'glow': slicing_type_glow,
+        'glow_zero': slicing_type_glow_zero
+    }
+
+    map = np.ndarray(256)    
+    for i in range(256):
+        map[i] = min(max(slicing_func[type](i, t1, t2, value),0),255)
+
+    return map
+
+def img_gray_level_slicing (img, t1, t2, value, type = 'linear'):
+    return img_applymap(img, map_gray_level_slicing (t1, t2, value, type))
+
+#Compresión de rango dinámico
+def map_dynamic_range_compression_b (c):
+    map = np.ndarray(256)
+    for i in range(256):
+        map[i] = 255 * (i/255)**(1/c)
+    return map    
+
+def img_dynamic_range_compression_b (img,c):
+    return img_applymap(img, map_dynamic_range_compression_b(c))      
+
+def map_dynamic_range_compression ():
+    c = 255 / log(256,10)
+    map = np.ndarray(256)
+    for i in range(256):
+        map[i] = floor(c * log(fabs(i)+1,10))
+    return map  
+
+def img_dynamic_range_compression (img):
+    return img_applymap(img, map_dynamic_range_compression())      
+
+
+
